@@ -52,6 +52,7 @@
     #lyricInput {
       min-height: 120px;
       overflow-y: hidden; /* 자동 확장을 위해 스크롤바 숨김 */
+      transition: height 0.1s ease; /* 늘어나고 줄어들 때 부드럽게 */
     }
     #previewContainer { min-height: 120px; max-height: 500px; }
   }
@@ -153,7 +154,7 @@
     </div>
     <textarea
      id="lyricInput"
-     class="textarea textarea-bordered w-full text-base leading-relaxed font-medium resize-none flex-1 focus:outline-primary focus:border-primary"
+     class="textarea textarea-bordered w-full text-base leading-relaxed font-medium resize-none focus:outline-primary focus:border-primary"
      placeholder="가사를 입력하세요...&#10;&#10;— 절을 구분하려면 빈 줄을 두거나,&#10;— 빈 슬라이드를 삽입하려면 줄에 '---' 만 입력하세요."
      oninput="handleInput()"
      spellcheck="false"
@@ -336,11 +337,10 @@
     const isPortraitMobile = window.innerWidth < 1024 && window.innerHeight > window.innerWidth;
 
     if (isPortraitMobile) {
-      // 1) 먼저 'auto'로 리셋 → 줄어드는 것도 감지 가능
-      lyricInput.style.height = 'auto';
-      // 2) 실제 내용 높이(scrollHeight)로 확장 (inline style이 CSS보다 우선순위 높으므로 정상 작동)
+      // '1px' 로 먼저 강제 리플로우 → scrollHeight가 정확히 재계산됨
+      // ('auto'만으로는 일부 브라우저에서 scrollHeight가 이전 값으로 남는 문제 발생)
+      lyricInput.style.height = '1px';
       lyricInput.style.height = lyricInput.scrollHeight + 'px';
-      // 미리보기는 CSS(max-height: 500px)에 맡김
       previewContainer.style.height = '';
     } else {
       // 가로모드/PC: inline style 제거 → CSS media query가 520px를 적용
@@ -369,6 +369,7 @@
 
   // ── handleInput (debounced autosave) ──
   function handleInput() {
+   adjustHeight(); // 키 입력마다 즉시 높이 조절 (updateView 이전에 먼저 실행)
    updateView();
    clearTimeout(saveTimer);
    saveTimer = setTimeout(saveToStorage, 800);
